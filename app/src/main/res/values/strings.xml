@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">PokemonGo Assignment</string>
+
+    <string name="maps_sdk_api_key">AIzaSyDdBWSSf_ieB4VGs_nJYrdFUgh0EIYVqiI</string>
 </resources>
