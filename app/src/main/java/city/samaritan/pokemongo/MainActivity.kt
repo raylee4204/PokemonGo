@@ -1,8 +1,8 @@
 package city.samaritan.pokemongo
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import city.samaritan.pokemongo.ui.main.ExploreFragment
+import androidx.appcompat.app.AppCompatActivity
+import city.samaritan.pokemongo.ui.main.MainFragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -11,7 +11,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.container, ExploreFragment.newInstance())
+                .replace(R.id.container, MainFragment.newInstance())
                 .commitNow()
         }
     }
