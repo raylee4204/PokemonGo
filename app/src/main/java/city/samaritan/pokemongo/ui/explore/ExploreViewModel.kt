@@ -5,7 +5,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import city.samaritan.pokemongo.model.Pokemon
-import city.samaritan.pokemongo.network.OpenPokemonRepository
+import city.samaritan.pokemongo.model.PokemonLocation
+import city.samaritan.pokemongo.network.PokemonRepository
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,16 +16,29 @@ import javax.inject.Inject
 import kotlin.random.Random
 
 @HiltViewModel
-class ExploreViewModel @Inject constructor(private val repository: OpenPokemonRepository) :
+class ExploreViewModel @Inject constructor(private val repository: PokemonRepository) :
     ViewModel() {
 
-    private val _randomPokemonLocations = MutableLiveData<List<LatLng>>()
+    private val _pokemons = MutableLiveData<List<Pokemon>>()
+    val pokemons: LiveData<List<Pokemon>> = _pokemons
+
+    private val _randomPokemonLocations = MutableLiveData<List<PokemonLocation>>()
     val randomPokemonLocations = _randomPokemonLocations
     private val random = Random(System.currentTimeMillis())
 
+    init {
+        viewModelScope.launch(Dispatchers.Default) {
+            _pokemons.postValue(repository.getPokemons())
+        }
+    }
+
     fun getRandomLocations(bounds: LatLngBounds) {
+        if (_pokemons.value == null) return
+
         _randomPokemonLocations.value = emptyList()
-        val newLocations = ArrayList<LatLng>()
+        val allPokemons = ArrayList(_pokemons.value!!)
+        val newLocations = ArrayList<PokemonLocation>()
+
         val minLat = bounds.northeast.latitude
         val minLng = bounds.northeast.longitude
         val maxLat = bounds.southwest.latitude
@@ -32,11 +46,13 @@ class ExploreViewModel @Inject constructor(private val repository: OpenPokemonRe
 
         viewModelScope.launch(Dispatchers.Default) {
             for (i in 0 until MAX_POKEMON_COUNT) {
+                if (allPokemons.isEmpty()) break
                 val randomLatLng = LatLng(
                     random.nextDouble() * (maxLat - minLat) + minLat,
                     random.nextDouble() * (maxLng - minLng) + minLng
                 )
-                newLocations.add(randomLatLng)
+                val randomPokemon = allPokemons.removeAt(random.nextInt(allPokemons.size))
+                newLocations.add(PokemonLocation(randomPokemon, randomLatLng))
             }
             _randomPokemonLocations.postValue(newLocations)
         }
