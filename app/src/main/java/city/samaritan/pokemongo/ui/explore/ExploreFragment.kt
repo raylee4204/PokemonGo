@@ -4,25 +4,31 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import city.samaritan.pokemongo.R
 import city.samaritan.pokemongo.databinding.FragmentExploreBinding
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
 class ExploreFragment : Fragment(), OnMapReadyCallback {
 
-    private var _binding: FragmentExploreBinding? = null
-
-    // This property is only valid between onCreateView and
-    // onDestroyView.
-    private val binding get() = _binding!!
     private lateinit var googleMap: GoogleMap
+    private lateinit var pokeBallMarker: BitmapDescriptor
+    private var _binding: FragmentExploreBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: ExploreViewModel by viewModels()
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,6 +44,19 @@ class ExploreFragment : Fragment(), OnMapReadyCallback {
         val fragment: SupportMapFragment =
             childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         fragment.getMapAsync(this)
+        viewModel.randomPokemonLocations.observe(viewLifecycleOwner) { locations ->
+            for (location in locations) {
+                googleMap.addMarker(
+                    MarkerOptions()
+                        .position(location)
+                        .icon(pokeBallMarker)
+                )
+            }
+        }
+
+        val icon =
+            AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pokeball)!!.toBitmap()
+        pokeBallMarker = BitmapDescriptorFactory.fromBitmap(icon)
     }
 
     override fun onDestroyView() {
@@ -45,21 +64,19 @@ class ExploreFragment : Fragment(), OnMapReadyCallback {
         _binding = null
     }
 
-    companion object {
-        fun newInstance() = ExploreFragment()
-    }
-
     override fun onMapReady(googleMap: GoogleMap) {
         this.googleMap = googleMap
-
-        val toronto = LatLng(43.651070, -79.347015)
-        googleMap.addMarker(
-            MarkerOptions()
-                .position(toronto)
-                .title("Toronto")
-        )
-        googleMap.setMinZoomPreference(10f)
+        this.googleMap.setOnCameraIdleListener {
+            googleMap.clear()
+            val bounds = this.googleMap.projection.visibleRegion.latLngBounds
+            viewModel.getRandomLocations(bounds)
+        }
+        val toronto = LatLng(43.6710603,-79.3758142)
+        googleMap.setMinZoomPreference(14f)
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(toronto))
     }
 
+    companion object {
+        fun newInstance() = ExploreFragment()
+    }
 }
