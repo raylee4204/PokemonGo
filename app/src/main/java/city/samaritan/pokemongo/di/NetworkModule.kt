@@ -1,17 +1,16 @@
 package city.samaritan.pokemongo.di
 
 import city.samaritan.pokemongo.network.OpenPokemonApiService
-import city.samaritan.pokemongo.network.PokemonRepository
 import city.samaritan.pokemongo.network.PokemonService
+import city.samaritan.pokemongo.network.utils.AuthInterceptor
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Qualifier
@@ -38,7 +37,7 @@ object NetworkModule {
         @AuthInterceptorOkHttpClient okHttpClient: OkHttpClient
     ): PokemonService {
         return retrofitBuilder
-            .baseUrl("http://us-central1-samaritan-android-assignment.cloudfunctions.net/")
+            .baseUrl("https://us-central1-samaritan-android-assignment.cloudfunctions.net/")
             .client(okHttpClient)
             .build()
             .create(PokemonService::class.java)
@@ -60,19 +59,10 @@ object NetworkModule {
     @AuthInterceptorOkHttpClient
     @Singleton
     @Provides
-    fun provideAuthOkhttp(
-        repository: PokemonRepository
-    ): OkHttpClient {
-        return OkHttpClient.Builder().authenticator { _, response ->
-            return@authenticator runBlocking(Dispatchers.Default) {
-                val token = repository.getToken() ?: return@runBlocking null
-
-                return@runBlocking response.request
-                    .newBuilder()
-                    .addHeader("Authorization", "Bearer $token")
-                    .build()
-            }
-        }.build()
+    fun provideAuthOkhttp(authInterceptor: AuthInterceptor): OkHttpClient {
+        val interceptor = HttpLoggingInterceptor()
+        interceptor.level = HttpLoggingInterceptor.Level.BODY
+        return OkHttpClient.Builder().addInterceptor(interceptor).authenticator(authInterceptor).build()
     }
 
     @OtherInterceptorOkHttpClient

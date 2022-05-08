@@ -1,46 +1,60 @@
 package city.samaritan.pokemongo.network
 
-import city.samaritan.pokemongo.model.Token
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import android.util.Log
+import city.samaritan.pokemongo.db.PokemonDao
+import city.samaritan.pokemongo.model.Pokemon
+import city.samaritan.pokemongo.network.dto.toModel
+import city.samaritan.pokemongo.toLocalDateTime
+import com.google.android.gms.maps.model.LatLng
 import java.io.IOException
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
 import javax.inject.Inject
 
-class PokemonRepository @Inject constructor(private val service: PokemonService) {
+class PokemonRepository @Inject constructor(
+    private val service: PokemonService,
+    private val openPokemonApiService: OpenPokemonApiService,
+    private val dao: PokemonDao
+) {
 
-    private var token: Token? = null
+    suspend fun getCapturedPokemons(): List<Pokemon> {
+        try {
+            val capturedPokemons = service.getCapturedPokemons()
+            for (pokemon in capturedPokemons) {
+                val localPokemon = dao.findPokemonById(pokemon.id) ?: continue
 
-    suspend fun getToken(): Token? {
-        validateToken()
-        return token
-    }
-
-    private suspend fun validateToken() {
-        val expiredTime = token?.expiresAt
-        if (expiredTime == null) {
-            token = refreshToken()
-        } else if (expiredTime.isAfter(LocalDateTime.now())) {
-            token = refreshToken()
-        }
-    }
-
-    private suspend fun refreshToken(): Token? {
-        return withContext(Dispatchers.Default) {
-            try {
-                val response = service.generateToken()
-                Token(
-                    response.token,
-                    LocalDateTime.ofInstant(
-                        Instant.ofEpochMilli(response.expiresAt),
-                        ZoneId.systemDefault()
-                    )
-                )
-            } catch (e: IOException) {
-                null
+                localPokemon.capturedDate = pokemon.capturedDate.toLocalDateTime()
+                localPokemon.capturedLocation = LatLng(pokemon.latitude, pokemon.longitude)
+                dao.updatePokemon(localPokemon)
             }
+        } catch (e: IOException) {
         }
+        return dao.getCapturedPokemons()
+    }
+
+    suspend fun getPokemons(): List<Pokemon> {
+        return try {
+            val response = openPokemonApiService.getPokemons()
+            val result = response.results.mapNotNull {
+                try {
+                    val pokemonWithDetail = openPokemonApiService.getPokemonDetail(it.url)
+                    pokemonWithDetail.toModel()
+                } catch (e: IOException) {
+                    null
+                }
+            }
+            dao.insertPokemons(result)
+            dao.getCapturedPokemons()
+        } catch (exception: IOException) {
+            emptyList()
+        }
+    }
+
+    suspend fun getPokemonDetailById(id: Int): Pokemon? {
+        try {
+            val pokemon = openPokemonApiService.getPokemonDetailById(id).toModel()
+            dao.updatePokemon(pokemon)
+        } catch (exception: IOException) {
+        }
+
+        return dao.findPokemonById(id)
     }
 }
