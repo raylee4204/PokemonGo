@@ -2,7 +2,9 @@
     <string name="app_name">PokemonGo Assignment</string>
 
     <string name="maps_sdk_api_key">AIzaSyDdBWSSf_ieB4VGs_nJYrdFUgh0EIYVqiI</string>
+    <string name="basic_info">Basic Info</string>
 
+    <string name="title_pokemon_detail">Pokemon Detail</string>
     <array name="tab_names">
         <item>Explore</item>
         <item>Captured</item>

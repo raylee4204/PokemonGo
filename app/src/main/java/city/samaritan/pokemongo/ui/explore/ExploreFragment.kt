@@ -8,6 +8,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import city.samaritan.pokemongo.R
 import city.samaritan.pokemongo.databinding.FragmentExploreBinding
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -46,11 +47,13 @@ class ExploreFragment : Fragment(), OnMapReadyCallback {
         fragment.getMapAsync(this)
         viewModel.randomPokemonLocations.observe(viewLifecycleOwner) { locations ->
             for (location in locations) {
-                googleMap.addMarker(
+                val addedMarker = googleMap.addMarker(
                     MarkerOptions()
-                        .position(location)
+                        .position(location.coordinates)
                         .icon(pokeBallMarker)
-                )
+
+                ) ?: return@observe
+                addedMarker.tag = location.pokemon.id
             }
         }
 
@@ -64,14 +67,20 @@ class ExploreFragment : Fragment(), OnMapReadyCallback {
         _binding = null
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
-        this.googleMap = googleMap
-        this.googleMap.setOnCameraIdleListener {
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        googleMap.setOnMarkerClickListener { marker ->
+            findNavController().navigate(
+                R.id.action_pokemon_detail,
+                Bundle().also { it.putInt("pokemonId", marker.tag as Int) })
+            return@setOnMarkerClickListener true
+        }
+        googleMap.setOnCameraIdleListener {
             googleMap.clear()
-            val bounds = this.googleMap.projection.visibleRegion.latLngBounds
+            val bounds = googleMap.projection.visibleRegion.latLngBounds
             viewModel.getRandomLocations(bounds)
         }
-        val toronto = LatLng(43.6710603,-79.3758142)
+        val toronto = LatLng(43.6710603, -79.3758142)
         googleMap.setMinZoomPreference(14f)
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(toronto))
     }

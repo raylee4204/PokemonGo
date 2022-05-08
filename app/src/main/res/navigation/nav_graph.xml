@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/main">
+    <fragment
+        android:id="@+id/main"
+        android:name="city.samaritan.pokemongo.ui.main.MainFragment"
+        android:label=" "
+        tools:layout="@layout/fragment_main">
+        <action
+            android:id="@+id/action_pokemon_detail"
+            app:destination="@+id/pokemon_detail"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/pokemon_detail"
+        android:name="city.samaritan.pokemongo.ui.detail.PokemonDetailFragment"
+        android:label="@string/title_pokemon_detail"
+        tools:layout="@layout/fragment_pokemon_detail">
+        <argument
+            android:name="pokemonId"
+            android:defaultValue="0"
+            app:argType="integer" />
+    </fragment>
+</navigation>
