@@ -6,7 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import city.samaritan.pokemongo.R
 import city.samaritan.pokemongo.databinding.FragmentMainBinding
+import city.samaritan.pokemongo.ui.captures.CapturedPokemonsFragment
+import city.samaritan.pokemongo.ui.explore.ExploreFragment
 import com.google.android.material.tabs.TabLayoutMediator
 
 class MainFragment : Fragment() {
@@ -14,6 +17,9 @@ class MainFragment : Fragment() {
     private var _binding: FragmentMainBinding? = null
     private lateinit var viewPagerAdapter: MainViewPagerAdapter
     private val binding get() = _binding!!
+    private val pageNames by lazy {
+        resources.getStringArray(R.array.tab_names)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,9 +33,10 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewPagerAdapter = MainViewPagerAdapter(this)
+        binding.viewPager.offscreenPageLimit = 2
         binding.viewPager.adapter = viewPagerAdapter
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            tab.text = "TAB ${(position + 1)}"
+            tab.text = pageNames[position]
         }.attach()
     }
 
@@ -46,7 +53,7 @@ class MainFragment : Fragment() {
             return if (position == 0) {
                 ExploreFragment.newInstance()
             } else {
-                ExploreFragment.newInstance()
+                CapturedPokemonsFragment.newInstance()
             }
         }
     }

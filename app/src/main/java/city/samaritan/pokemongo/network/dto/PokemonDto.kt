@@ -7,7 +7,6 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class PokemonDto(val id: Int, val name: String, val sprites: Sprites, val stats: List<Stat>) {
 
-
     data class Sprites(val other: OtherSprites) {
 
         data class OtherSprites(@Json(name = "official-artwork") val officialArtWorkData: OfficialArtWork) {
