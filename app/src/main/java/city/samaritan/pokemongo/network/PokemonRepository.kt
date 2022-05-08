@@ -1,6 +1,5 @@
 package city.samaritan.pokemongo.network
 
-import android.util.Log
 import city.samaritan.pokemongo.db.PokemonDao
 import city.samaritan.pokemongo.model.Pokemon
 import city.samaritan.pokemongo.network.dto.toModel
@@ -31,6 +30,9 @@ class PokemonRepository @Inject constructor(
     }
 
     suspend fun getPokemons(): List<Pokemon> {
+        val pokemons = dao.getPokemons()
+        if (pokemons.isNotEmpty()) return pokemons
+
         return try {
             val response = openPokemonApiService.getPokemons()
             val result = response.results.mapNotNull {
@@ -42,13 +44,16 @@ class PokemonRepository @Inject constructor(
                 }
             }
             dao.insertPokemons(result)
-            dao.getCapturedPokemons()
+            dao.getPokemons()
         } catch (exception: IOException) {
             emptyList()
         }
     }
 
     suspend fun getPokemonDetailById(id: Int): Pokemon? {
+        val pokemon = dao.findPokemonById(id)
+        if (pokemon != null) return pokemon
+
         try {
             val pokemon = openPokemonApiService.getPokemonDetailById(id).toModel()
             dao.updatePokemon(pokemon)
